@@ -12,6 +12,11 @@ beautiful_clean_thing <- mutate(beautiful_clean_thing,
 # ~ mass and cover, and mass and height, in which we look at response of 
 # the relation to region, year, and region * year interaction?
 # quick look -------------------------------------------------------------------
+ggplot(beautiful_clean_thing, aes(x=cover_pct, y=max_ht_cm)) +
+  geom_point(aes(color = observers)) +
+  ggsave("images/coverXheight.png", limitsize=F)
+
+
 mod <- lmer(log(mass_g) ~ cover_pct + (cover_pct||year), 
             data=beautiful_clean_thing)
 beautiful_clean_thing$preds <- predict(mod)
