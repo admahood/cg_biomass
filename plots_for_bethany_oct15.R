@@ -21,21 +21,26 @@ p1 <- ggplot(ff, aes(x=BRTE_cover, y=BRTE_mass)) +
   ggtitle(paste("Cover: 9 m2, Mass 0.9 m2. R2 = ", round(s1$r.squared,2))) +
   ylab("Cheatgrass Biomass (g)") +
   xlab("Cheatgrass Cover (%)")+
-  theme_bw()
+  theme_bw() +
+  theme(plot.title = element_text(size = 12))
+
 
 p2 <- ggplot(js, aes(x=BRTE, y = Mass)) +
   geom_point() +
   ggtitle(paste("Cover: 2.2 m2, Mass 2.2 m2. R2 = ", round(s2$r.squared,2))) +
   ylab("Cheatgrass Biomass (g)") +
-  xlab("Cheatgrass Cover (%)")+
-  theme_bw()
+  xlab("Cheatgrass Cover (%)") +
+  theme_bw() +
+  theme(plot.title = element_text(size = 12))
+
 
 p3 <- ggplot(bm, aes(x=a_grass_cover, y=a_grass_gm2)) +
   geom_point() +
   ggtitle(paste("Cover: 0.5 m2, Mass 0.5 m2. R2 = ", round(s3$r.squared,2))) +
   ylab("Annual Grass Biomass (g)") +
   xlab("Annual Grass Cover (%)")+
-  theme_bw()
+  theme_bw() +
+  theme(plot.title = element_text(size = 12))
 
 p4 <- ggplot(beautiful_clean_thing, aes(x=cover_pct, y=sqrt(mass_g))) +
   geom_point() +
@@ -43,7 +48,9 @@ p4 <- ggplot(beautiful_clean_thing, aes(x=cover_pct, y=sqrt(mass_g))) +
   #geom_line(aes(y=preds))+
   ggtitle(paste("Cover 1 m2, Mass 0.1 m2. R2 = ", round(s4$r.squared,2),
                 "\n0.67 with height+cover*observers")) +
-  theme_bw()
+  theme_bw() +
+  theme(plot.title = element_text(size = 12))
+
 
 ggarrange(p1,p2,p3,p4)
-ggsave("panel.png",limitsize = FALSE)
+ggsave("panel.png",limitsize = FALSE, width = 7.5, height = 6)
