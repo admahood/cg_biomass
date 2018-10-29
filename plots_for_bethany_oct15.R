@@ -4,7 +4,6 @@ lapply(libs, library, character.only = TRUE)
 
 source("lmms.R")
 
-
 three_year <- read.csv("data/all_3_years.csv")
 ff <- read.csv("data/BRTE_mass_x_plot_pt9_m2_per_sample_2016.csv")
 js <- read.csv("data/BRTE_cover_mass_2pt2_m2_per_sample_2016.csv")
@@ -23,7 +22,6 @@ p1 <- ggplot(ff, aes(x=BRTE_cover, y=BRTE_mass)) +
   xlab("Cheatgrass Cover (%)")+
   theme_bw() +
   theme(plot.title = element_text(size = 12))
-
 
 p2 <- ggplot(js, aes(x=BRTE, y = Mass)) +
   geom_point() +
@@ -54,3 +52,6 @@ p4 <- ggplot(beautiful_clean_thing, aes(x=cover_pct, y=sqrt(mass_g))) +
 
 ggarrange(p1,p2,p3,p4)
 ggsave("panel.png",limitsize = FALSE, width = 7.5, height = 6)
+
+
+summary(lm(mass_g~poly(cover_pct,2), data = dplyr::filter(beautiful_clean_thing, year == "2018" & region == "idaho")))
