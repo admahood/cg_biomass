@@ -2,6 +2,7 @@ source("data_prep.R")
 library(lme4)
 library(remef) # install_github('hohenstein/remef')
 library(lmerTest)
+library(car)
 
 beautiful_clean_thing <- mutate(beautiful_clean_thing,
                                 year_region = paste(year,region,sep = "_")) %>%
