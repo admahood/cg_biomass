@@ -1,6 +1,4 @@
 # setup ------------------------------------------------------------------------
-library(tibble)
-library(dplyr)
 library(tidyverse)
 
 options(stringsAsFactors = FALSE)
