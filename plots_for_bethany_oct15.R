@@ -130,15 +130,17 @@ p6 <- ggplot(na.omit(all), aes(x=cover_pct, y=mass_gm2, color = study)) +
         legend.background = element_rect(fill = 'transparent'))+
   ggsave("all_together_oneline.png", width=6,height=6,limitsize = FALSE)
 
-x <- lm(mass_gm2~0+cover_pct*study, data = na.omit(all))
+x <- lmer(mass_gm2 ~ 0 + cover_pct +(cover_pct -1| study), na.omit(all))
+#x <- lm(mass_gm2~0+cover_pct*study, data = na.omit(all))
 sx <- summary(x)
+rx <- r.squaredLR(x)
 p7 <- ggplot(na.omit(all), aes(x=cover_pct, y=mass_gm2, color = study)) +
   # geom_abline(slope=1, intercept = 0)+
   geom_point() +
   #geom_smooth(method="lm") +
   geom_line(aes(y=predict(x)))+
-  ggtitle(paste("All studies. R2 = ", signif(sx$r.squared,2),
-                "\nLinear Model with Percent Cover:Study Interaction")) +
+  ggtitle(paste("All studies. pseudo R2 = ", signif(rx[1],2),
+                "\nLMM with random slopes, fixed intercept")) +
   theme_bw() +
   theme(plot.title = element_text(size = 12))  +
   theme(legend.justification=c(0,1), legend.position=c(0,1),
