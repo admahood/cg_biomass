@@ -130,7 +130,7 @@ p6 <- ggplot(na.omit(all), aes(x=cover_pct, y=mass_gm2, color = study)) +
         legend.background = element_rect(fill = 'transparent'))+
   ggsave("all_together_oneline.png", width=6,height=6,limitsize = FALSE)
 
-x <- lmer(mass_gm2 ~ 0 + poly(cover_pct,2) +(cover_pct -1| study), na.omit(all))
+x <- lmer(mass_gm2 ~ 0 + cover_pct +(cover_pct -1| study), na.omit(all))
 #x <- lm(mass_gm2~0+cover_pct*study, data = na.omit(all))
 sx <- summary(x)
 rx <- r.squaredLR(x)
@@ -165,10 +165,75 @@ p8 <- ggplot(na.omit(all), aes(x=cover_pct, y=mass_gm2, color = study)) +
         legend.title = element_blank())+
   ggsave("all_together_manycurves.png",width=6,height=6, limitsize = FALSE)
 
+p5 <- ggplot(not_idaho_2018, aes(x=cover_pct, y=mass_gm2)) +
+  geom_point() +
+  geom_smooth(method="lm") +
+  #geom_line(aes(y=preds))+
+  ggtitle(paste("Cover 1 m2, Mass 0.1 m2. R2 = ", round(s4$r.squared,2),
+                "\nRandom Placement of Cover Frame")) +
+  theme_bw() +
+  theme(plot.title = element_text(size = 12)) +
+  theme(legend.justification=c(0,1), legend.position=c(0,1),
+        legend.background = element_rect(fill = 'transparent'), 
+        legend.title = element_blank())
 
-polymod <- lm(mass_gm2~poly(cover_pct,2), data = na.omit(all))
+# all over again but with <40% -------------------------------------------------
+
+all40 <- filter(all, cover_pct < 40)
+
+w <- lm(mass_gm2~0+cover_pct, data = na.omit(all40))
+sw <- summary(w)
+p640 <- ggplot(na.omit(all40), aes(x=cover_pct, y=mass_gm2, color = study)) +
+  # geom_abline(slope=1, intercept = 0)+
+  geom_point() +
+  #geom_smooth(method="lm") +
+  geom_line(aes(y=predict(w)))+
+  ggtitle(paste("All Studies. R2 = ", round(sw$r.squared,2), "slope = ",round(as.numeric(w$coefficients),2),
+                "\nLinear Model with No Interactions")) +
+  theme_bw() +
+  theme(plot.title = element_text(size = 12)) +
+  theme(legend.justification=c(0,1), legend.position=c(0,1),
+        legend.background = element_rect(fill = 'transparent'))+
+  ggsave("all_together_oneline40.png", width=6,height=6,limitsize = FALSE)
+
+x <- lmer(mass_gm2 ~ 0 + cover_pct +(cover_pct -1| study), na.omit(all40))
+#x <- lm(mass_gm2~0+cover_pct*study, data = na.omit(all))
+sx <- summary(x)
+rx <- r.squaredLR(x)
+p7 <- ggplot(na.omit(all40), aes(x=cover_pct, y=mass_gm2, color = study)) +
+  # geom_abline(slope=1, intercept = 0)+
+  geom_point() +
+  #geom_smooth(method="lm") +
+  geom_line(aes(y=predict(x)))+
+  ggtitle(paste("All studies. pseudo R2 = ", signif(rx[1],2),
+                "\nLMM with random slopes, fixed intercept")) +
+  theme_bw() +
+  theme(plot.title = element_text(size = 12))  +
+  theme(legend.justification=c(0,1), legend.position=c(0,1),
+        legend.background = element_rect(fill = 'transparent'))+
+  ggsave("all_together_manylines40.png",width=6,height=6, limitsize = FALSE)
+
+y <- lmer(mass_gm2 ~ 0 + poly(cover_pct,2) +(cover_pct -1| study), na.omit(all40))
+# y <- lm(mass_gm2~0+poly(cover_pct,2)*study, data = na.omit(all))
+sy <- summary(y)
+ry <- r.squaredLR(y)
+p8 <- ggplot(na.omit(all40), aes(x=cover_pct, y=mass_gm2, color = study)) +
+  # geom_abline(slope=1, intercept = 0)+
+  geom_point() +
+  #geom_smooth(method="lm") +
+  geom_line(aes(y=predict(y)))+
+  ggtitle(paste("All studies. pseudo R2 = ", signif(ry[1],2),
+                "\nLMM with fixed intercept and random slope")) +
+  theme_bw() +
+  theme(plot.title = element_text(size = 12)) +
+  theme(legend.justification=c(0,1), legend.position=c(0,1),
+        legend.background = element_rect(fill = 'transparent'),
+        legend.title = element_blank())+
+  ggsave("all_together_manycurves40.png",width=6,height=6, limitsize = FALSE)
 
 
+
+# -------
 bmmass <- bm %>%
   select(-X, -latitude,-longitude,-slope,-aspect,-date,-sample_year) %>%
   rename(forb = forb_gm2, p_grass = p_grass_gm2, a_grass = mass_gm2) %>%
