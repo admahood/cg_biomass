@@ -122,7 +122,7 @@ p6 <- ggplot(na.omit(all), aes(x=cover_pct, y=mass_gm2, color = study)) +
   geom_point() +
   #geom_smooth(method="lm") +
   geom_line(aes(y=predict(w)))+
-  ggtitle(paste("All Studies. R2 = ", round(sw$r.squared,2), "slope = ",as.numeric(w$coefficients),
+  ggtitle(paste("All Studies. R2 = ", round(sw$r.squared,2), "slope = ",round(as.numeric(w$coefficients),2),
                 "\nLinear Model with No Interactions")) +
   theme_bw() +
   theme(plot.title = element_text(size = 12)) +
@@ -130,7 +130,7 @@ p6 <- ggplot(na.omit(all), aes(x=cover_pct, y=mass_gm2, color = study)) +
         legend.background = element_rect(fill = 'transparent'))+
   ggsave("all_together_oneline.png", width=6,height=6,limitsize = FALSE)
 
-x <- lmer(mass_gm2 ~ 0 + cover_pct +(cover_pct -1| study), na.omit(all))
+x <- lmer(mass_gm2 ~ 0 + poly(cover_pct,2) +(cover_pct -1| study), na.omit(all))
 #x <- lm(mass_gm2~0+cover_pct*study, data = na.omit(all))
 sx <- summary(x)
 rx <- r.squaredLR(x)
@@ -147,19 +147,22 @@ p7 <- ggplot(na.omit(all), aes(x=cover_pct, y=mass_gm2, color = study)) +
         legend.background = element_rect(fill = 'transparent'))+
   ggsave("all_together_manylines.png",width=6,height=6, limitsize = FALSE)
 
-y <- lm(mass_gm2~0+poly(cover_pct,2)*study, data = na.omit(all))
+y <- lmer(mass_gm2 ~ 0 + poly(cover_pct,2) +(cover_pct -1| study), na.omit(all))
+# y <- lm(mass_gm2~0+poly(cover_pct,2)*study, data = na.omit(all))
 sy <- summary(y)
+ry <- r.squaredLR(y)
 p8 <- ggplot(na.omit(all), aes(x=cover_pct, y=mass_gm2, color = study)) +
   # geom_abline(slope=1, intercept = 0)+
   geom_point() +
   #geom_smooth(method="lm") +
   geom_line(aes(y=predict(y)))+
-  ggtitle(paste("All studies. R2 = ", signif(sy$r.squared,2),
-                "\nLinear Model with Percent Cover:Study Interaction")) +
+   ggtitle(paste("All studies. pseudo R2 = ", signif(ry[1],2),
+                 "\nLMM with fixed intercept and random slope")) +
   theme_bw() +
   theme(plot.title = element_text(size = 12)) +
   theme(legend.justification=c(0,1), legend.position=c(0,1),
-        legend.background = element_rect(fill = 'transparent'))+
+        legend.background = element_rect(fill = 'transparent'),
+        legend.title = element_blank())+
   ggsave("all_together_manycurves.png",width=6,height=6, limitsize = FALSE)
 
 
