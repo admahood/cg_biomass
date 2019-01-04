@@ -122,7 +122,7 @@ p6 <- ggplot(na.omit(all), aes(x=cover_pct, y=mass_gm2, color = study)) +
   geom_point() +
   #geom_smooth(method="lm") +
   geom_line(aes(y=predict(w)))+
-  ggtitle(paste("All Studies. R2 = ", round(sw$r.squared,2),
+  ggtitle(paste("All Studies. R2 = ", round(sw$r.squared,2), "slope = ",as.numeric(w$coefficients),
                 "\nLinear Model with No Interactions")) +
   theme_bw() +
   theme(plot.title = element_text(size = 12)) +
@@ -163,11 +163,7 @@ p8 <- ggplot(na.omit(all), aes(x=cover_pct, y=mass_gm2, color = study)) +
 
 polymod <- lm(mass_gm2~poly(cover_pct,2), data = na.omit(all))
 
-# for next time
-# enter data for bm 2018 check
-# fig with all data diff col points but one line - through 0 w/R2 check
-# fig with all data and 5 lines - through 0 w/R2 kinda check
-# pretty map -- only idaho 2018 and my 4 not yet but whatever that's easy
+
 bmmass <- bm %>%
   select(-X, -latitude,-longitude,-slope,-aspect,-date,-sample_year) %>%
   rename(forb = forb_gm2, p_grass = p_grass_gm2, a_grass = mass_gm2) %>%
@@ -190,3 +186,20 @@ p9 <- ggplot(bmshort, aes(x=cover_pct, y=biomass_gm2, color=life_form, shape=Yea
   geom_point(size=2) +
   ggtitle(paste("Biomass study, all functional groups")) +
   theme_bw() ;p9
+
+# for next time
+# enter data for bm 2018 check
+# fig with all data diff col points but one line - through 0 w/R2 check
+# fig with all data and 5 lines - through 0 w/R2 kinda check
+# pretty map -- only idaho 2018 and my 4 not yet but whatever that's easy
+
+# pilliod & arkles papers on the performance of different sampling methods
+# could be good to bring in
+# underestimation of cover leads to higher slopes, underestimation of biomass 
+# leads to lower slopes -- esp interesting given the higher cover estimates tend
+# to go back up towards the 1:1 curves. also suggests that there may be a tentency
+# to underestiate the influence of bare patches on overall cover. 
+# also, the three 1:1 studies are all just Adam Mahood estimating the cover, so 
+# if Adam Mahood always goes low on his cover estimates that could be a prob.
+# that said the biomass was clipped by 4-5 different people in my studies, so 
+# a systematic bias like that is less likely
