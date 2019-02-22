@@ -1,0 +1,14 @@
+---
+output: pdf_document
+---
+```{r, echo=F, message=F, warning=F, results='asis'}
+library(stargazer)
+library(tidyverse)
+options(knitr.kable.NA = '')
+d<-read_csv("data/soil_summary_manedit.csv")
+knitr::kable(d)
+
+e<- read_csv("data/big_table.csv")
+knitr::kable(e)
+
+```
