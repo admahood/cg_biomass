@@ -1,6 +1,6 @@
 source("data_prep.R")
 library(lme4)
-library(remef) # install_github('hohenstein/remef')
+library(remef) # devtools::install_github('hohenstein/remef')
 library(lmerTest)
 library(car)
 

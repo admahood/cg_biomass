@@ -1,8 +1,12 @@
 libs<- c("ggplot2", "ggpubr", "lme4", "lmerTest")
 
-lapply(libs, library, character.only = TRUE)
-
-source("data_prep.R")
+iini <-function(x){
+  #stands for install if not installed
+  if (!x %in% rownames(installed.packages())) install.packages(x)
+}
+lapply(libs, iini)
+lapply(libs, library, character.only = TRUE, verbose = FALSE)
+source("R/data_prep.R")
 
 idaho_2018 <- read.csv("data/all_3_years.csv") %>%
   filter(region == "idaho", year == "2018") %>%

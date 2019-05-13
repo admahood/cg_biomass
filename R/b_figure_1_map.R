@@ -1,8 +1,20 @@
-library("sf")
-library("tidyverse")
-library("ggpubr")
+# devtools::install_github("eliocamp/ggnewscale")
+
+libs<- c("sf", "ggpubr", "raster", "cowplot", "tidyverse","rgdal", "ggnewscale")
+
+iini <-function(x){
+  #stands for install if not installed
+  if (!x %in% rownames(installed.packages())) install.packages(x)
+}
+lapply(libs, iini)
+lapply(libs, library, character.only = TRUE, verbose = FALSE)
+
+
+source("R/a_data_prep.R")
 
 plot_file <- "data/all_plot_locations.gpkg"
+elev_file <- "/home/a/data/elevation/PRISM_us_dem_800m_bil/PRISM_us_dem_800m_bil.bil"
+hs_file <- "/home/a/data/background/hillshade.tif"
 
 if(!file.exists(plot_file)){
   utm11nad<- "+proj=utm +zone=11 +datum=NAD83 +units=m +no_defs"
@@ -30,27 +42,52 @@ if(!file.exists(plot_file)){
     select(plot, study) %>%
     st_transform(crs=st_crs(bm))
   
+  wgb <- read.csv("data/cg_mass_cover_2017 - Sheet1.csv") %>%
+    filter(region == "western_gb") %>%
+    dplyr::rename("y" = "UTMx..NAD11.ID.and.west..NAD12.UT..1",
+                  "x" = "UTMx..NAD11.ID.and.west..NAD12.UT.")
+  
+  
+  
   all<- list(id,ff,bm,js) %>%
     do.call("rbind",.)
   
   st_write(all,plot_file, delete_dsn = TRUE)
 }else{all<-st_read(plot_file)}
 
+
+if(!file.exists(hs_file)){
+  elev<- raster(elev_file)
+  slope <- terrain(elev, opt="slope")
+  aspect <- terrain(elev, opt = "aspect")
+  hs<- raster::hillShade(slope=slope, aspect=aspect) 
+  writeRaster(hs, hs_file)
+}else{hs<-raster(hs_file)}
+
+all <- all %>% st_transform(crs=crs(hs, asText=T))
 extent <- st_bbox(all, dist = 1) %>%
   st_as_sfc
 
 states <- st_read("/home/a/data/background/CUS/") %>%
   st_transform(st_crs(all))# %>% st_intersection(extent)
 
+hs_c<- crop(hs, as(st_buffer(extent, dist = 2), "Spatial"))
+
 
 p1 <- ggplot() +
-  geom_sf(data = all, aes(color=study),alpha=0.8,show.legend = "point")  +
+  geom_raster(data = as.data.frame(hs_c,xy=TRUE),
+              aes(x=x,y=y, fill=hillshade), show.legend = F) +
+  scale_fill_gradient("hillshade", low = "black", high = "white") +
+  new_scale("fill") +
+  geom_sf(data = all, aes(fill=study), shape = 21,
+          alpha=0.8,show.legend = "point")  +
+  # scale_fill_discrete("study")+
   geom_sf(data = states, fill="transparent") +
   coord_sf(xlim = c(-116,-118.5), ylim = c(40.5,43.25)) +
   theme_bw() +
   theme(panel.grid.major = element_line(color = "transparent"),
-        legend.position = c(1,0),
-        legend.justification = c(1,0),
+        #legend.position = c(1,0),
+        #legend.justification = c(1,0),
         legend.background = element_rect(fill = "transparent"))
 
 p2 <- ggplot() +
@@ -62,8 +99,11 @@ p2 <- ggplot() +
         axis.ticks = element_blank())
 
 
-ggdraw(p1) +
-  cowplot::draw_plot(p2, x=0.23, y=0.58, width = 0.4, height = 0.4) +
-  draw_plot_label("NV",x=.6, y= .4, colour = "grey40") +
-  draw_plot_label("ID", x = .6, y= .7, colour = "grey40") +
+# ggdraw(p1) +
+#   cowplot::draw_plot(p2, x=0.15, y=0.58, width = 0.4, height = 0.4) +
+#   draw_plot_label("NV",x=.6, y= .4, colour = "black") +
+#   draw_plot_label("ID", x = .6, y= .7, colour = "black") +
+#   ggsave("map.png", dpi = 600)
+
+ggarrange(p1,p2, widths=c(3,1), common.legend = T, legend="bottom")+
   ggsave("map.png", dpi = 600)
