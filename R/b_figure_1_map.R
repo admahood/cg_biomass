@@ -21,35 +21,43 @@ if(!file.exists(plot_file)){
   latlong<- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs" 
   
   ff <- st_read("/home/a/projects/FF_Study/Data/Plots/FF_plots.shp") %>%
-    mutate(study = "ff") %>%
-    select(plot = Name, study)
+    mutate(study = "ff",
+           scale = "plot") %>%
+    dplyr::select(plot = Name, study, scale)
   
   js <- st_read("/home/a/projects/FF_Study/Data/Plots/AllPlots20160728.shp") %>%
     filter(PlotType == "Jones_Transects" & substr(Name,4,8)!= "STAKE") %>%
-    mutate(study = "js") %>%
-    select(plot = Name, study)
+    mutate(study = "js",
+           scale = "plot") %>%
+    dplyr::select(plot = Name, study, scale)
   
   bm <- read.csv("/home/a/projects/biomass/data/biomass_2017 - site.csv") %>%
     st_as_sf(coords=c("longitude","latitude"), crs = latlong) %>%
-    mutate(study = "bm") %>%
-    select(plot, study)
+    mutate(study = "bm",
+           scale = "plot") %>%
+    dplyr::select(plot, study, scale)
   
   id <- read.csv("data/idaho_cheatgrass_bm_2018 - Sheet1.csv") %>%
     st_as_sf( coords = c("UTMx..NAD.83.zone.11.", "UTMy..NAD.83.zone.11."), 
               crs = utm11nad) %>%
     filter(region == "idaho") %>%
-    mutate(study = "cg") %>%
-    select(plot, study) %>%
+    mutate(study = "id",
+           scale = "subplot") %>%
+    dplyr::select(plot, study, scale) %>%
     st_transform(crs=st_crs(bm))
   
   wgb <- read.csv("data/cg_mass_cover_2017 - Sheet1.csv") %>%
     filter(region == "western_gb") %>%
-    dplyr::rename("y" = "UTMx..NAD11.ID.and.west..NAD12.UT..1",
-                  "x" = "UTMx..NAD11.ID.and.west..NAD12.UT.")
+    st_as_sf(coords = c("UTMx..NAD11.ID.and.west..NAD12.UT.", "UTMx..NAD11.ID.and.west..NAD12.UT..1"),
+             crs = utm11nad)%>%
+    mutate(study = "wgb",
+           scale = "subplot") %>%
+    dplyr::select(plot, study, scale) %>%
+    st_transform(crs=st_crs(bm))
   
   
   
-  all<- list(id,ff,bm,js) %>%
+  all<- list(id,ff,bm,js, wgb) %>%
     do.call("rbind",.)
   
   st_write(all,plot_file, delete_dsn = TRUE)
@@ -79,16 +87,19 @@ p1 <- ggplot() +
               aes(x=x,y=y, fill=hillshade), show.legend = F) +
   scale_fill_gradient("hillshade", low = "black", high = "white") +
   new_scale("fill") +
-  geom_sf(data = all, aes(fill=study), shape = 21,
-          alpha=0.8,show.legend = "point")  +
-  # scale_fill_discrete("study")+
+  geom_sf(data = all, aes(fill=study, shape = scale),
+          size = 2,show.legend = "point")  +
+  scale_shape_manual(values = c(21,22)) +
+  scale_fill_discrete("study", guide = guide_legend(override.aes = list(shape = 21))) +
   geom_sf(data = states, fill="transparent") +
-  coord_sf(xlim = c(-116,-118.5), ylim = c(40.5,43.25)) +
+  coord_sf(xlim = c(-116,-119.5), ylim = c(38,43.25)) +
   theme_bw() +
   theme(panel.grid.major = element_line(color = "transparent"),
-        #legend.position = c(1,0),
-        #legend.justification = c(1,0),
-        legend.background = element_rect(fill = "transparent"))
+        legend.position = "right",
+        legend.background = element_rect(fill = "transparent"),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank())
 
 p2 <- ggplot() +
   geom_sf(data = states, fill = "white", color="grey") +
@@ -99,11 +110,10 @@ p2 <- ggplot() +
         axis.ticks = element_blank())
 
 
-# ggdraw(p1) +
-#   cowplot::draw_plot(p2, x=0.15, y=0.58, width = 0.4, height = 0.4) +
-#   draw_plot_label("NV",x=.6, y= .4, colour = "black") +
-#   draw_plot_label("ID", x = .6, y= .7, colour = "black") +
-#   ggsave("map.png", dpi = 600)
+ggdraw(p1) +
+  cowplot::draw_plot(p2, x=0.37, y=0.0, width = 0.4, height = 0.4) +
+  ggsave("figures/map.png", dpi = 600)
 
-ggarrange(p1,p2, widths=c(3,1), common.legend = T, legend="bottom")+
-  ggsave("map.png", dpi = 600)
+# ggarrange(p1,p2, widths=c(3,1), common.legend = T, legend="bottom") +
+#   ggsave("figures/map.png", dpi = 600)
+
