@@ -13,6 +13,7 @@ lapply(libs, library, character.only = TRUE, verbose = FALSE)
 source("R/a_data_prep.R")
 
 plot_file <- "data/all_plot_locations.gpkg"
+# download elevation @ 800m from http://www.prism.oregonstate.edu/normals/
 elev_file <- "/home/a/data/elevation/PRISM_us_dem_800m_bil/PRISM_us_dem_800m_bil.bil"
 hs_file <- "/home/a/data/background/hillshade.tif"
 
@@ -84,7 +85,7 @@ hs_c<- crop(hs, as(st_buffer(extent, dist = 2), "Spatial"))
 
 p1 <- ggplot() +
   geom_raster(data = as.data.frame(hs_c,xy=TRUE),
-              aes(x=x,y=y, fill=hillshade), show.legend = F) +
+              aes(x=x,y=y, fill=layer), show.legend = F) +
   scale_fill_gradient("hillshade", low = "black", high = "white") +
   new_scale("fill") +
   geom_sf(data = all, aes(fill=study, shape = scale),
@@ -97,6 +98,7 @@ p1 <- ggplot() +
   theme(panel.grid.major = element_line(color = "transparent"),
         legend.position = "right",
         legend.background = element_rect(fill = "transparent"),
+        legend.justification = "top",
         axis.text = element_blank(),
         axis.ticks = element_blank(),
         axis.title = element_blank())
@@ -107,12 +109,14 @@ p2 <- ggplot() +
   geom_sf(data=extent, fill="transparent")+
   coord_sf(xlim=c(-125,-108),ylim=c(30,50)) +
   theme(axis.text = element_blank(),
-        axis.ticks = element_blank())
+        axis.ticks = element_blank(),
+        panel.border = element_rect(color = "black", fill=NA))
 
 
-ggdraw(p1) +
-  cowplot::draw_plot(p2, x=0.37, y=0.0, width = 0.4, height = 0.4) +
-  ggsave("figures/map.png", dpi = 600)
+ggdraw() +
+  cowplot::draw_plot(p1,x=0,y=0)+
+  cowplot::draw_plot(p2, x=0.6, y=0.0, width = 0.4, height = 0.4) +
+  ggsave("figures/map.png", dpi = 600, height = 7, width = 8)
 
 # ggarrange(p1,p2, widths=c(3,1), common.legend = T, legend="bottom") +
 #   ggsave("figures/map.png", dpi = 600)
