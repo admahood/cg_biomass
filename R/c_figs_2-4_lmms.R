@@ -23,6 +23,14 @@ not_idaho_2018 <- read.csv("data/all_3_years.csv") %>%
   mutate(mass_gm2 = mass_g*10) %>%
   rbind(not_idaho_only2018)
 
+western_2019 <- read_csv("data/all_4_years.csv") %>%
+  filter(year == "2019", region == "western") %>%
+  mutate(mass_gm2 = mass_g*10)
+
+central_2019 <- read_csv("data/all_4_years.csv") %>%
+  filter(year == "2019", region == "central") %>%
+  mutate(mass_gm2 = mass_g*10)
+
 
 ff <- read.csv("data/BRTE_mass_x_plot_pt9_m2_per_sample_2016.csv") %>%
   mutate(mass_gm2 = BRTE_mass/0.9) %>%
@@ -41,16 +49,44 @@ bm18 <- read.csv("data/bm_site_data_w_biomass.csv") %>%
          cover_pct = a_grass_cover) %>%
   filter(sample_year == 2018)
 
-bm <- read.csv("data/bm_site_data_w_biomass.csv") %>%
+bm19 <- read.csv("data/site_bm_data_w_biomass_19.csv") %>%
+  rename(mass_gm2 = a_grass_gm2,
+         cover_pct = a_grass_cover) %>%
+  filter(sample_year == 2019)
+
+bm <- read.csv("data/site_bm_data_w_biomass_19.csv") %>%
   rename(mass_gm2 = a_grass_gm2,
          cover_pct = a_grass_cover) %>%
   mutate(Year = as.factor(sample_year))
+
+bm_sp <- read_csv("data/bm_subplot_2019.csv") %>%
+  rename(cover_pct = cover) %>%
+  mutate(mass_gm2 = biomass *10, 
+         plot = str_c(plot, "_", subplot))
 
 all <- rbind(mutate(dplyr::select(ff, cover_pct, mass_gm2),study = "ff16"),
              mutate(dplyr::select(js, cover_pct, mass_gm2),study = "js16"),
              mutate(dplyr::select(bm17, cover_pct, mass_gm2),study = "bm17"),
              mutate(dplyr::select(bm18, cover_pct, mass_gm2),study = "bm18"),
-             mutate(dplyr::select(idaho_2018, cover_pct, mass_gm2),study = "id18"))
+             mutate(dplyr::select(bm_sp, cover_pct, mass_gm2),study = "bm19"),
+             mutate(dplyr::select(idaho_2018, cover_pct, mass_gm2),study = "id18"),
+             mutate(dplyr::select(western_2019, cover_pct, mass_gm2),study = "w19"),
+             mutate(dplyr::select(central_2019, cover_pct, mass_gm2),study = "c19"))
+
+
+ggplot(all, aes(x = cover_pct, y=mass_gm2, color = study)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  facet_wrap (~study)
+
+ggplot(all, aes(x = cover_pct, y=mass_gm2, color = study)) +
+  geom_point() +
+  geom_smooth(method = "lm", se=F) +
+  geom_segment(aes(x=0, xend = 100, y=0, yend=500), color = "black") +
+  theme_pubr() +
+  annotate("text", x=10, y=400, label = "underestimation of cover") +
+  annotate("text", x=75, y=50, label = "overestimation of cover") +
+  annotate("text", x = 75, y=450, label = "accurate?")
 
 # figure 2 ---------------------------------------------------------------------
 
@@ -58,9 +94,12 @@ s1<-summary(lm(mass_gm2~cover_pct,ff))
 s2<-summary(lm(mass_gm2~cover_pct,js))
 s3<-summary(lm(mass_gm2~cover_pct,bm17))
 s33<-summary(lm(mass_gm2~cover_pct,bm18))
+s333<-summary(lm(mass_gm2~cover_pct,bm_sp))
 l3 <- lm(mass_gm2~0+cover_pct*Year, bm)
 s4<-summary(lm(mass_gm2~cover_pct,idaho_2018))
 s5<-summary(lm(mass_gm2~cover_pct,not_idaho_2018))
+s6<-summary(lm(mass_gm2~cover_pct,central_2019))
+s7<-summary(lm(mass_gm2~cover_pct,western_2019))
 #s4<-summary(lm(log(mass_g)~cover_pct*observers +max_ht_cm,beautiful_clean_thing))
 
 p1 <- ggplot(ff, aes(x=cover_pct, y=mass_gm2)) +
@@ -86,7 +125,7 @@ p2 <- ggplot(js, aes(x=cover_pct, y = mass_gm2)) +
 p3 <- ggplot(bm, aes(x=cover_pct, y=mass_gm2, color = Year, shape=Year)) +
   geom_point(size=2) +
   #geom_smooth(aes(), method="lm", se=F)+
-  scale_color_manual(values = c("black", "grey40"))+
+  scale_color_manual(values = c("black", "grey40", "grey70"))+
   ggtitle(paste("Each point represents 0.5 m2.\n2017 R2 = ", round(s3$r.squared,2),
                 "   2018 R2 = ", round(s33$r.squared,2))) +
   ylab("Cheatgrass Biomass (g/m2)") +
@@ -107,10 +146,12 @@ p4 <- ggplot(idaho_2018, aes(x=cover_pct, y=mass_gm2)) +
   theme_bw() +
   theme(plot.title = element_text(size = 12))
 
-ggarrange(p2,p1,p3,p4)+
+ggarrange(p2,p1,p3,p4) +
 ggsave("figures/figure_2_panel.png",limitsize = FALSE, width = 7.5, height = 6)
 
 # figure 3 ---------------------------------------------------------------------
+all_ps <- filter(all, study != "id18", study != "c19")
+
 x <- lmer(mass_gm2 ~ 0 + cover_pct +(cover_pct -1| study), na.omit(all_ps))
 #x <- lm(mass_gm2~0+cover_pct*study, data = na.omit(all))
 sx <- summary(x)
@@ -122,14 +163,13 @@ p7 <- ggplot(na.omit(all_ps), aes(x=cover_pct, y=mass_gm2, color = study)) +
   geom_line(aes(y=predict(x)))+
   ggtitle(paste("All studies. pseudo R2 = ", signif(rx[1],2),
                 "\nLMM with random slopes, fixed intercept")) +
-  theme_bw() +
+  theme_pubr() +
   theme(plot.title = element_text(size = 12))  +
   theme(legend.justification=c(0,1), legend.position=c(0,1),
         legend.background = element_rect(fill = 'transparent'))+
   ggsave("figures/f3_whole_hog_manylines.png",width=6,height=6, limitsize = FALSE)
 
 # figure 4 ---------------------------------------------------------------------
-all_ps <- filter(all, study != "id18")
 w <- lm(mass_gm2~0+cover_pct, data = na.omit(all_ps))
 sw <- summary(w)
 p6 <- ggplot(na.omit(all_ps), aes(x=cover_pct, y=mass_gm2, color = study)) +
@@ -137,7 +177,8 @@ p6 <- ggplot(na.omit(all_ps), aes(x=cover_pct, y=mass_gm2, color = study)) +
   geom_point() +
   #geom_smooth(method="lm") +
   geom_line(aes(y=predict(w)), color = "red")+
-  ggtitle(paste("All Studies. R2 = ", round(sw$r.squared,2), "slope = ",round(as.numeric(w$coefficients),2),
+  ggtitle(paste("All Studies aggregated. R2 = ", round(sw$r.squared,2), 
+                ", slope = ",round(as.numeric(w$coefficients),2),
                 "\nLinear Model with No Interactions")) +
   theme_bw() +
   theme(plot.title = element_text(size = 12)) +
