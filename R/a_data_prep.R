@@ -55,3 +55,68 @@ if(!file.exists( "data/all_4_years.csv")){
  beautiful_clean_thing <- read_csv("data/all_4_years.csv")
 }
 
+# data wrangling ---------------------------------------------------------------
+
+idaho_2018 <- read.csv("data/all_3_years.csv") %>%
+  filter(region == "idaho", year == "2018") %>%
+  mutate(mass_gm2 = mass_g*10)
+
+not_idaho_only2018 <- read.csv("data/all_3_years.csv") %>%
+  filter(year == "2018" & region != "idaho") %>%
+  mutate(mass_gm2 = mass_g*10)
+
+not_idaho_2018 <- read.csv("data/all_3_years.csv") %>%
+  filter(year != "2018")%>%
+  mutate(mass_gm2 = mass_g*10) %>%
+  rbind(not_idaho_only2018)
+
+western_2019 <- read_csv("data/all_4_years.csv") %>%
+  filter(year == "2019", region == "western") %>%
+  mutate(mass_gm2 = mass_g*10)
+
+central_2019 <- read_csv("data/all_4_years.csv") %>%
+  filter(year == "2019", region == "central") %>%
+  mutate(mass_gm2 = mass_g*10)
+
+
+ff <- read.csv("data/BRTE_mass_x_plot_pt9_m2_per_sample_2016.csv") %>%
+  mutate(mass_gm2 = BRTE_mass/0.9) %>%
+  rename(cover_pct = BRTE_cover)
+js <- read.csv("data/BRTE_cover_mass_2pt2_m2_per_sample_2016.csv") %>%
+  mutate(mass_gm2 = Mass/2.2) %>%
+  rename(cover_pct = BRTE)
+
+bm17 <- read.csv("data/bm_site_data_w_biomass.csv") %>%
+  rename(mass_gm2 = a_grass_gm2,
+         cover_pct = a_grass_cover) %>%
+  filter(sample_year == 2017)
+
+bm18 <- read.csv("data/bm_site_data_w_biomass.csv") %>%
+  rename(mass_gm2 = a_grass_gm2,
+         cover_pct = a_grass_cover) %>%
+  filter(sample_year == 2018)
+
+bm19 <- read.csv("data/site_bm_data_w_biomass_19.csv") %>%
+  rename(mass_gm2 = a_grass_gm2,
+         cover_pct = a_grass_cover) %>%
+  filter(sample_year == 2019)
+
+bm <- read.csv("data/site_bm_data_w_biomass_19.csv") %>%
+  rename(mass_gm2 = a_grass_gm2,
+         cover_pct = a_grass_cover) %>%
+  mutate(Year = as.factor(sample_year))
+
+bm_sp <- read_csv("data/bm_subplot_2019.csv") %>%
+  rename(cover_pct = cover) %>%
+  mutate(mass_gm2 = biomass *10, 
+         plot = str_c(plot, "_", subplot))
+
+all <- rbind(mutate(dplyr::select(ff, cover_pct, mass_gm2),study = "ff16"),
+             mutate(dplyr::select(js, cover_pct, mass_gm2),study = "js16"),
+             mutate(dplyr::select(bm17, cover_pct, mass_gm2),study = "bm17"),
+             mutate(dplyr::select(bm18, cover_pct, mass_gm2),study = "bm18"),
+             mutate(dplyr::select(bm_sp, cover_pct, mass_gm2),study = "bm19"),
+             mutate(dplyr::select(idaho_2018, cover_pct, mass_gm2),study = "id18"),
+             mutate(dplyr::select(western_2019, cover_pct, mass_gm2),study = "w19"),
+             mutate(dplyr::select(central_2019, cover_pct, mass_gm2),study = "c19"))
+
