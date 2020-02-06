@@ -8,31 +8,49 @@ lapply(libs, iini)
 lapply(libs, library, character.only = TRUE, verbose = FALSE)
 source("R/a_data_prep.R")
 
-# basic viz
-ggplot(all, aes(x = cover_pct, y=mass_gm2, color = study)) +
-  geom_point() +
-  geom_smooth(method = "lm") +
-  facet_wrap (~study) +
-  theme_classic()
+theme_set(theme_classic())
 
 # figure 2 ---------------------------------------------------------------------
+f2_data <- rbind(ff %>% dplyr::select(Plot, cover_pct, mass_gm2)%>%
+                   na.omit()%>%
+                   mutate(study = "ff",
+                          preds = predict(lm(mass_gm2~cover_pct,.)),
+                          r2 = summary(lm(mass_gm2~cover_pct,.))$r.squared),
+                 js %>% dplyr::select(Plot, cover_pct, mass_gm2)%>%
+                   na.omit()%>%
+                   mutate(study = "js",
+                          preds = predict(lm(mass_gm2~cover_pct,.)),
+                          r2 = summary(lm(mass_gm2~cover_pct,.))$r.squared), 
+                 bm17%>% dplyr::select(Plot=plot, cover_pct, mass_gm2)%>%
+                   na.omit()%>%
+                   mutate(study = "bm17",
+                          preds = predict(lm(mass_gm2~cover_pct,.)),
+                          r2 = summary(lm(mass_gm2~cover_pct,.))$r.squared),
+                 bm18%>% dplyr::select(Plot=plot, cover_pct, mass_gm2)%>%
+                   na.omit()%>%
+                   mutate(study = "bm18",
+                          preds = predict(lm(mass_gm2~cover_pct,.)),
+                          r2 = summary(lm(mass_gm2~cover_pct,.))$r.squared),
+                 bm19%>% dplyr::select(Plot=plot, cover_pct, mass_gm2)%>%
+                   na.omit()%>%
+                   mutate(study = "bm19",
+                          preds = predict(lm(mass_gm2~cover_pct,.)),
+                          r2 = summary(lm(mass_gm2~cover_pct,.))$r.squared))
 
-s1<-summary(lm(mass_gm2~cover_pct,ff))
-s2<-summary(lm(mass_gm2~cover_pct,js))
-s3<-summary(lm(mass_gm2~cover_pct,bm17))
-s33<-summary(lm(mass_gm2~cover_pct,bm18))
-s333<-summary(lm(mass_gm2~cover_pct,bm_sp))
-l3 <- lm(mass_gm2~0+cover_pct*Year, bm)
-s4<-summary(lm(mass_gm2~cover_pct,idaho_2018))
-s5<-summary(lm(mass_gm2~cover_pct,not_idaho_2018))
-s6<-summary(lm(mass_gm2~cover_pct,central_2019))
-s7<-summary(lm(mass_gm2~cover_pct,western_2019))
+ggplot(f2_data, aes(x=cover_pct, y=mass_gm2)) +
+  geom_point() +
+  geom_line(aes(y=preds)) +
+  facet_wrap(~study, ncol = 1) +
+  geom_label(aes(x=0,y=200, label = paste("R2: ",round(r2,2))),
+             hjust = "left")+
+  ggsave("figures/figure_2_panel.png", height = 10, width=4)
+
 #s4<-summary(lm(log(mass_g)~cover_pct*observers +max_ht_cm,beautiful_clean_thing))
 
 p1 <- ggplot(ff, aes(x=cover_pct, y=mass_gm2)) +
   geom_point() +
   ggtitle(paste("Biomass from 0.1 m2 Subset of 1m2 Cover Quadrats.\nCover 9m2, Biomass 0.9 m2. R2 = ", round(s1$r.squared,2))) +
-  #ylab("Cheatgrass Biomass (g/m2)") +
+  ylab("Cheatgrass Biomass (g/m2)") +
   #xlab("Cheatgrass Cover (%)")+
   xlab(NULL)+
   ylab(NULL)+
@@ -51,7 +69,6 @@ p2 <- ggplot(js, aes(x=cover_pct, y = mass_gm2)) +
 
 p3 <- ggplot(bm, aes(x=cover_pct, y=mass_gm2, color = Year, shape=Year)) +
   geom_point(size=2) +
-  #geom_smooth(aes(), method="lm", se=F)+
   scale_color_manual(values = c("black", "grey40", "grey70"))+
   ggtitle(paste("Each point represents 0.5 m2.\n2017 R2 = ", round(s3$r.squared,2),
                 "   2018 R2 = ", round(s33$r.squared,2))) +
@@ -64,15 +81,33 @@ p3 <- ggplot(bm, aes(x=cover_pct, y=mass_gm2, color = Year, shape=Year)) +
         legend.background = element_rect(fill = 'transparent'), 
         legend.title = element_blank())
 
-p4 <- ggplot(idaho_2018, aes(x=cover_pct, y=mass_gm2)) +
-  geom_point() +
-  ggtitle(paste("Cover 1 m2, Mass 0.1 m2.\n R2 = ", round(s4$r.squared,2))) +
-  #ylab("Cheatgrass Biomass (g/m2)") +
-  xlab("Cheatgrass Cover (%)") +
-  #xlab(NULL)+
-  ylab(NULL)+
+p4 <- ggplot(bm, aes(x=cover_pct, y=mass_gm2, color = Year, shape=Year)) +
+  geom_point(size=2) +
+  scale_color_manual(values = c("black", "grey40", "grey70"))+
+  ggtitle(paste("Each point represents 0.5 m2.\n2017 R2 = ", round(s3$r.squared,2),
+                "   2018 R2 = ", round(s33$r.squared,2))) +
+  ylab("Cheatgrass Biomass (g/m2)") +
+  
+  xlab("Cheatgrass Cover (%)")+
   theme_bw() +
-  theme(plot.title = element_text(size = 12))
+  theme(plot.title = element_text(size = 12)) +
+  theme(legend.justification=c(0,1), legend.position=c(0,1),
+        legend.background = element_rect(fill = 'transparent'), 
+        legend.title = element_blank())
+
+p5 <- ggplot(bm, aes(x=cover_pct, y=mass_gm2, color = Year, shape=Year)) +
+  geom_point(size=2) +
+  scale_color_manual(values = c("black", "grey40", "grey70"))+
+  ggtitle(paste("Each point represents 0.5 m2.\n2017 R2 = ", round(s3$r.squared,2),
+                "   2018 R2 = ", round(s33$r.squared,2))) +
+  ylab("Cheatgrass Biomass (g/m2)") +
+  
+  xlab("Cheatgrass Cover (%)")+
+  theme_bw() +
+  theme(plot.title = element_text(size = 12)) +
+  theme(legend.justification=c(0,1), legend.position=c(0,1),
+        legend.background = element_rect(fill = 'transparent'), 
+        legend.title = element_blank())
 
 ggarrange(p2,p1,p3,p4) +
 ggsave("figures/figure_2_panel.png",limitsize = FALSE, width = 7.5, height = 6)
