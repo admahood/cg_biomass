@@ -37,6 +37,7 @@ f2_data <- rbind(ff %>% dplyr::select(Plot, cover_pct, mass_gm2)%>%
                           preds = predict(lm(mass_gm2~cover_pct,.)),
                           r2 = summary(lm(mass_gm2~cover_pct,.))$r.squared))
 
+# add in regression equation
 ggplot(f2_data, aes(x=cover_pct, y=mass_gm2)) +
   geom_point() +
   geom_line(aes(y=preds)) +
@@ -45,104 +46,25 @@ ggplot(f2_data, aes(x=cover_pct, y=mass_gm2)) +
              hjust = "left")+
   ggsave("figures/figure_2_panel.png", height = 10, width=4)
 
-#s4<-summary(lm(log(mass_g)~cover_pct*observers +max_ht_cm,beautiful_clean_thing))
-
-p1 <- ggplot(ff, aes(x=cover_pct, y=mass_gm2)) +
-  geom_point() +
-  ggtitle(paste("Biomass from 0.1 m2 Subset of 1m2 Cover Quadrats.\nCover 9m2, Biomass 0.9 m2. R2 = ", round(s1$r.squared,2))) +
-  ylab("Cheatgrass Biomass (g/m2)") +
-  #xlab("Cheatgrass Cover (%)")+
-  xlab(NULL)+
-  ylab(NULL)+
-  theme_bw() +
-  theme(plot.title = element_text(size = 12))
-
-p2 <- ggplot(js, aes(x=cover_pct, y = mass_gm2)) +
-  geom_point() +
-  ggtitle(paste("Cover, Biomass from identical Quadrats.\nEach point represents 2.2 m2 R2 = ", round(s2$r.squared,2))) +
-  ylab("Cheatgrass Biomass (g/m2)") +
-  #xlab("Cheatgrass Cover (%)") +
-  xlab(NULL)+
-  # ylab(NULL)+
-  theme_bw() +
-  theme(plot.title = element_text(size = 12))
-
-p3 <- ggplot(bm, aes(x=cover_pct, y=mass_gm2, color = Year, shape=Year)) +
-  geom_point(size=2) +
-  scale_color_manual(values = c("black", "grey40", "grey70"))+
-  ggtitle(paste("Each point represents 0.5 m2.\n2017 R2 = ", round(s3$r.squared,2),
-                "   2018 R2 = ", round(s33$r.squared,2))) +
-  ylab("Cheatgrass Biomass (g/m2)") +
-  
-  xlab("Cheatgrass Cover (%)")+
-  theme_bw() +
-  theme(plot.title = element_text(size = 12)) +
-  theme(legend.justification=c(0,1), legend.position=c(0,1),
-        legend.background = element_rect(fill = 'transparent'), 
-        legend.title = element_blank())
-
-p4 <- ggplot(bm, aes(x=cover_pct, y=mass_gm2, color = Year, shape=Year)) +
-  geom_point(size=2) +
-  scale_color_manual(values = c("black", "grey40", "grey70"))+
-  ggtitle(paste("Each point represents 0.5 m2.\n2017 R2 = ", round(s3$r.squared,2),
-                "   2018 R2 = ", round(s33$r.squared,2))) +
-  ylab("Cheatgrass Biomass (g/m2)") +
-  
-  xlab("Cheatgrass Cover (%)")+
-  theme_bw() +
-  theme(plot.title = element_text(size = 12)) +
-  theme(legend.justification=c(0,1), legend.position=c(0,1),
-        legend.background = element_rect(fill = 'transparent'), 
-        legend.title = element_blank())
-
-p5 <- ggplot(bm, aes(x=cover_pct, y=mass_gm2, color = Year, shape=Year)) +
-  geom_point(size=2) +
-  scale_color_manual(values = c("black", "grey40", "grey70"))+
-  ggtitle(paste("Each point represents 0.5 m2.\n2017 R2 = ", round(s3$r.squared,2),
-                "   2018 R2 = ", round(s33$r.squared,2))) +
-  ylab("Cheatgrass Biomass (g/m2)") +
-  
-  xlab("Cheatgrass Cover (%)")+
-  theme_bw() +
-  theme(plot.title = element_text(size = 12)) +
-  theme(legend.justification=c(0,1), legend.position=c(0,1),
-        legend.background = element_rect(fill = 'transparent'), 
-        legend.title = element_blank())
-
-ggarrange(p2,p1,p3,p4) +
-ggsave("figures/figure_2_panel.png",limitsize = FALSE, width = 7.5, height = 6)
 
 # figure 3 ---------------------------------------------------------------------
 all_ps <- filter(all, study != "id18", study != "c19", study != "w19")
 
-x <- lmer(mass_gm2 ~ 0 + cover_pct +(cover_pct -1| study), na.omit(all_ps))
-x1<- lmer(mass_gm2 ~ 0 + cover_pct +(1| study), na.omit(all_ps))
+x <- lmer(mass_gm2 ~ 0 + cover_pct +(1| study), na.omit(all_ps))
 sx <- summary(x)
-sx1 <- summary(x1)
 rx <- r.squaredLR(x)
-rx1 <- r.squaredLR(x1)
 
 # add in regression equation
 
-p7 <- ggplot(na.omit(all_ps), aes(x=cover_pct, y=mass_gm2, color = study)) +
+ggplot(na.omit(all_ps), aes(x=cover_pct, y=mass_gm2, color = study)) +
   geom_point() +
-  geom_line(aes(y=predict(x)))+
-  geom_abline(slope = sx1$coefficients[1], color = "red", lwd=1) +
-  ggtitle(paste("All studies. pseudo R2 = ", signif(rx[1],2),
-                "\nLMM with random slopes, fixed intercept")) +
+  geom_abline(slope = sx$coefficients[1], color = "red", lwd=1) +
+  ggtitle(paste("All studies. pseudo R2 = ", signif(rx[1],2))) +
   theme_pubr() +
   theme(plot.title = element_text(size = 12))  +
-  annotate("text", x=20, y=350, 
-           label = "underestimation of cover", hjust = "left") +
-  annotate("text", x=100, y=150, 
-           label = "overestimation of cover", hjust = "right") +
-  annotate("text", x = 78, y=250, 
-           label = paste("accurate?\npseudo R2:", round(rx1[1],2),
-                         "\nslope: ",round(sx1$coefficients[1],2)), 
-           color="red")+
   theme(legend.justification=c(0,1), legend.position=c(0,1),
         legend.background = element_rect(fill = 'transparent'))+
-  ggsave("figures/f3_whole_hog_manylines.png",
+  ggsave("figures/figure_3_lmm_line.png",
          width=6,height=6, limitsize = FALSE);p7
 
 # figure 4 ---------------------------------------------------------------------
