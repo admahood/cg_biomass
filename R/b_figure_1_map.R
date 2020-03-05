@@ -22,6 +22,7 @@ if(!file.exists(plot_file)){
   latlong<- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs" 
   
   ff <- st_read("/home/a/projects/FF_Study/Data/Plots/FF_plots.shp") %>%
+    st_zm(drop=TRUE) %>%
     mutate(study = "ff",
            scale = "plot") %>%
     dplyr::select(plot = Name, study, scale)
@@ -38,30 +39,56 @@ if(!file.exists(plot_file)){
            scale = "plot") %>%
     dplyr::select(plot, study, scale)
   
-  id <- read.csv("data/idaho_cheatgrass_bm_2018 - Sheet1.csv") %>%
-    st_as_sf( coords = c("UTMx..NAD.83.zone.11.", "UTMy..NAD.83.zone.11."), 
-              crs = utm11nad) %>%
-    filter(region == "idaho") %>%
-    mutate(study = "id",
-           scale = "subplot") %>%
+  cg18 <- read.csv("data/idaho_cheatgrass_bm_2018 - Sheet1.csv") %>%
+    st_as_sf(coords = c("UTMx..NAD.83.zone.11.",
+                        "UTMy..NAD.83.zone.11."), 
+             crs = utm11nad) %>%
+    mutate(scale = "subplot",
+           study = region) %>%
     dplyr::select(plot, study, scale) %>%
     st_transform(crs=st_crs(bm))
   
-  wgb <- read.csv("data/cg_mass_cover_2017 - Sheet1.csv") %>%
-    filter(region == "western_gb") %>%
-    st_as_sf(coords = c("UTMx..NAD11.ID.and.west..NAD12.UT.", "UTMx..NAD11.ID.and.west..NAD12.UT..1"),
+  cg17 <- read.csv("data/cg_mass_cover_2017 - Sheet1.csv") %>%
+    st_as_sf(coords = c("UTMx..NAD11.ID.and.west..NAD12.UT.", 
+                        "UTMx..NAD11.ID.and.west..NAD12.UT..1"),
              crs = utm11nad)%>%
-    mutate(study = "wgb",
+    mutate(study = region,
            scale = "subplot") %>%
     dplyr::select(plot, study, scale) %>%
     st_transform(crs=st_crs(bm))
   
+  cg16 <-rbind(readxl::read_xlsx("data/cheatgrass_sent.xlsx",sheet = 1) %>%
+                 mutate(study = "western"),
+               readxl::read_xlsx("data/cheatgrass_sent.xlsx",sheet = 2) %>%
+                 mutate(study = "northern"),
+               readxl::read_xlsx("data/cheatgrass_sent.xlsx",sheet = 3)%>%
+                 mutate(study = "eastern")) %>%
+    filter(position == "center") %>%
+    mutate(plot = as.numeric(str_sub(point, 3, 4))) %>%
+    st_as_sf(coords = c("UTMx", "UTMy"),
+             crs = utm11nad) %>%
+    left_join(read_csv("data/BRTE_mass-cover-ht_10_11_16 - Sheet1.csv"),
+              by="plot") %>%
+    mutate(scale = "subplot") %>%
+    dplyr::select(plot, study, scale) %>%
+    st_transform(crs=st_crs(bm))
+  
+  cg19 <- read_csv("data/cheatgrass_2019.csv") %>%
+    st_as_sf(coords = c("UTMx", "UTMy"),
+             crs = utm11nad) %>%
+    mutate(study = region)%>%
+    mutate(scale = "subplot") %>%
+    dplyr::select(plot, study, scale) %>%
+    st_transform(crs=st_crs(bm))
+    
   
   
-  all<- list(id,ff,bm,js, wgb) %>%
-    do.call("rbind",.)
+  all<- list(ff,bm,js, cg16,cg17,cg18,cg19) %>%
+    do.call("rbind",.) 
   
   st_write(all,plot_file, delete_dsn = TRUE)
+  st_write(all, "all_plot_locations.shp")
+  
 }else{all<-st_read(plot_file)}
 
 
