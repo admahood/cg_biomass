@@ -11,24 +11,18 @@ source("R/a_data_prep.R")
 theme_set(theme_classic())
 
 # figure 2 ---------------------------------------------------------------------
-f2_data <- rbind(
-  # ff %>% dplyr::select(Plot, cover_pct, mass_gm2)%>%
-  #                  na.omit()%>%
-  #                  mutate(study = "ff",
-  #                         preds = predict(lm(mass_gm2~cover_pct,.)),
-  #                         r2 = summary(lm(mass_gm2~cover_pct,.))$r.squared),
-                 js %>% dplyr::select(Plot, cover_pct, mass_gm2)%>%
+f2_data <- rbind(js %>% dplyr::select(Plot, cover_pct, mass_gm2)%>%
                    na.omit()%>%
-                   mutate(study = "js"), 
+                   mutate(study = "June 2016. n = 20"), 
                  bm17%>% dplyr::select(Plot=plot, cover_pct, mass_gm2)%>%
                    na.omit()%>%
-                   mutate(study = "bm17"),
+                   mutate(study = "July 2017. n = 40"),
                  bm18%>% dplyr::select(Plot=plot, cover_pct, mass_gm2)%>%
                    na.omit()%>%
-                   mutate(study = "bm18"),
-                 bm19%>% dplyr::select(Plot=plot, cover_pct, mass_gm2)%>%
-                   na.omit()%>%
-                   mutate(study = "bm19"))
+                   mutate(study = "July 2018. n = 40")) %>%
+  mutate(study = factor(study, levels = c("June 2016. n = 20",
+                                          "July 2017. n = 40",
+                                          "July 2018. n = 40")))
 f2_data %>%
   nest(-study) %>% 
   mutate(model = map(data,~lm(mass_gm2~0+cover_pct, data = .x)),
@@ -48,9 +42,10 @@ f2_data %>%
                                      "\n",p,
                                      "\ny = 0 + ", slope,"x")), 
             hjust="left", vjust="top")+
-  ggsave("figures/figure_2_panel.png", height = 10, width=4)
+  ggsave("figures/figure_2_panel.png", height = 8, width=4)
 
 # figure 3 ---------------------------------------------------------------------
+#first showing lmm is better
 library(nlme)
 mod_f3 <- gls(mass_gm2 ~ 0 + cover_pct, f2_data, method = "ML")
 mod_f3mm <-lme(mass_gm2 ~ 0 + cover_pct, 
@@ -61,13 +56,11 @@ mod_f3mm <-lme(mass_gm2 ~ 0 + cover_pct,
 anova(mod_f3,mod_f3mm)
 
 mod_f3m <-lmer(mass_gm2 ~ 0 + cover_pct + (cover_pct|study), 
-              # control = lmeControl(maxIter = 1000, opt = "optim"),
-              # random = ~cover_pct|study,
-              data = f2_data,REML = TRUE)
+              data = f2_data, REML = TRUE)
 
 preds <- predict(mod_f3, interval = "confidence", level=.95) %>%
   as_tibble 
-mm <- summary(mod_f3m)$coefficients[1]
+mm <- summary(mod_f3m)$coefficients[1] %>% round(2)
 
 f3_data<- f2_data %>%
   cbind(preds) 
@@ -95,6 +88,7 @@ ggplot(f3_data, aes(x=cover_pct, y=mass_gm2, color = study)) +
 # figure for 1m2 plots----------------------------------------------------------
 bct <- beautiful_clean_thing %>%
   mutate(study = str_to_title(paste0(region, " ", year)))%>% 
+  mutate(study = str_replace(study, "_gb", "")) %>%
   filter(study != "Utah 2016") %>%
   rbind(beautiful_clean_thing %>% mutate(study = "All Together"))
 
@@ -109,15 +103,16 @@ bct %>%
     mutate(p = ifelse(p < 0.05, "p < 0.05", "p > 0.05"))%>%
     ggplot(aes(x=cover_pct, y=mass_g)) +
     geom_point() +
-    geom_smooth(se = FALSE, method = "lm") +
+    geom_smooth(se = FALSE, method = "lm", formula = y~0+x) +
     ylab(expression(Mass~(g~m^-2))) +
     xlab("Percent Cover") +
-    facet_wrap(~study) +
+    facet_wrap(~study, ncol=3) +
+    theme(panel.border = element_rect(size=0.5, fill=NA))+
     geom_text(aes(3, 40, label = paste("R2 = ",adj.r.squared, 
                                        "\n",p,
                                        "\ny = 0 + ", slope,"x")), 
               hjust="left") +
-  ggsave("figures/one_meter_sq_plots.png", height = 10, width = 10)
+  ggsave("figures/one_meter_sq_plots.png", height = 10, width = 8)
 
 # subplot vs plot level=========================================================
 
