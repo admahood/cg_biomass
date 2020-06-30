@@ -21,20 +21,22 @@ if(!file.exists(plot_file)){
   utm11nad<- "+proj=utm +zone=11 +datum=NAD83 +units=m +no_defs"
   latlong<- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs" 
   
-  ff <- st_read("/home/a/projects/FF_Study/Data/Plots/FF_plots.shp") %>%
+  ff <- st_read("/home/a/projects/archive/FF_Study/Data/Plots/FF_plots.shp") %>%
     st_zm(drop=TRUE) %>%
     mutate(study = "ff",
            scale = "plot") %>%
     dplyr::select(plot = Name, study, scale)
   
-  js <- st_read("/home/a/projects/FF_Study/Data/Plots/AllPlots20160728.shp") %>%
+  js <- st_read("/home/a/projects/archive/FF_Study/Data/Plots/AllPlots20160728.shp") %>%
     filter(PlotType == "Jones_Transects" & substr(Name,4,8)!= "STAKE") %>%
+    st_zm(drop=TRUE) %>%
     mutate(study = "js",
            scale = "plot") %>%
     dplyr::select(plot = Name, study, scale)
   
   bm <- read.csv("/home/a/projects/biomass/data/biomass_2017 - site.csv") %>%
     st_as_sf(coords=c("longitude","latitude"), crs = latlong) %>%
+    st_zm(drop=TRUE) %>%
     mutate(study = "bm",
            scale = "plot") %>%
     dplyr::select(plot, study, scale)
