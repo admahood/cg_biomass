@@ -15,38 +15,55 @@ a<-120 #asymptote
 b<- 1.8 #horizontal displacement
 c<- .024
 f1 <- function(x) (a*exp(-1*b*exp(-1*c*x)))-20
+f2 <- function(x) tan(x)
 
-ggplot(data.frame(x = c(0, 140)), aes(x)) + 
+cf1<- ggplot(data.frame(x = c(0, 105)), aes(x)) + 
   stat_function(fun = f1, n = 1000, color = "grey30") +
   coord_cartesian(ylim = c(0, 120)) +
-  geom_segment(x=0, xend=130, y=0, yend=130, color = "red")+
+  geom_segment(x=0, xend=105, y=0, yend=105, color = "red")+
   theme(axis.ticks=element_blank(),
         axis.text=element_blank())+
-  geom_hline(yintercept=100, lty=2)+
-  xlab("Density") +
+  geom_hline(yintercept=84, lty=2)+
+  xlab("Stem Density") +
   ylab("Abundance Measures") +
-  geom_text(x=55, y=80, label="Biomass", color="red") +
+  geom_text(x=75, y=95, label="Biomass", color="red") +
   geom_text(x=95, y=70, label = "Cover") +
-  geom_text(x=1, y=105, label = "100% Cover", hjust = "left")+
-  ggsave("figures/conceptual_figure.png", width=3.5, height=3.5)
+  geom_text(x=1, y=80, label = "100% Cover", hjust = "left")
+
+cf2<-ggplot(data.frame(x = c(0, 1)), aes(x)) + 
+  stat_function(fun = f2, n = 1000, color = "red") +
+  # coord_cartesian(ylim = c(0, 120)) +
+  geom_segment(x=0, xend=1, y=0, yend=1, color = "grey30") +
+  theme(axis.ticks=element_blank(),
+        axis.text=element_blank(),
+        axis.title.y = element_blank()) +
+  geom_vline(xintercept=1, lty=2) +
+  xlab("Cover") +
+  # ylab("Abundance Measures") +
+  geom_text(x=.5, y=.80, label="Biomass", color="red") +
+  geom_text(x=.85, y=.70, label = "Cover") +
+  geom_text(x= 0.95, y=.105, label = "100% Cover", hjust = "left", angle=90)
+
+ggarrange(cf1, cf2, labels="auto", label.x = c(.1, 0.05))+
+  ggsave("figures/conceptual_figure.png", width=7, height=3.5)
 
 # figure 2 ---------------------------------------------------------------------
 f2_data <- rbind(js %>% dplyr::select(Plot=plot, cover_pct, mass_gm2)%>%
                    na.omit()%>%
-                   mutate(study = "June 2016. n = 59"), 
+                   mutate(study = "a. June 2016. n = 59"), 
                  bm17%>% dplyr::select(Plot=plot, cover_pct, mass_gm2)%>%
                    na.omit()%>%
-                   mutate(study = "July 2017. n = 40"),
+                   mutate(study = "b. July 2017. n = 40"),
                  bm18%>% dplyr::select(Plot=plot, cover_pct, mass_gm2)%>%
                    na.omit()%>%
-                   mutate(study = "July 2018. n = 40"),
+                   mutate(study = "c. July 2018. n = 40"),
                  bm19%>% dplyr::select(Plot=plot, cover_pct, mass_gm2)%>%
                    na.omit()%>%
-                   mutate(study = "September 2019. n = 40")) %>%
-  mutate(study = factor(study, levels = c("June 2016. n = 59",
-                                          "July 2017. n = 40",
-                                          "July 2018. n = 40",
-                                          "September 2019. n = 40")))
+                   mutate(study = "d. September 2019. n = 40")) %>%
+  mutate(study = factor(study, levels = c("a. June 2016. n = 59",
+                                          "b. July 2017. n = 40",
+                                          "c. July 2018. n = 40",
+                                          "d. September 2019. n = 40")))
 xd<-f2_data %>%
   nest(-study) %>% 
   mutate(model = map(data,~lm(mass_gm2~0+cover_pct, data = .x)),
@@ -55,7 +72,7 @@ xd<-f2_data %>%
          p=map_dbl(model, ~ signif(summary(.x)$coefficients[4],3)))  %>% 
   select(-data, -model) %>% 
   left_join(f2_data) %>% 
-  mutate(p = ifelse(p < 0.05, "p < 0.05", "p > 0.05"))
+  mutate(p = ifelse(p < 0.05, "p < 0.05", "p > 0.05")) 
 
 # xdp<-f2_data %>%
 #   nest(-study) %>% 
@@ -67,12 +84,14 @@ xd<-f2_data %>%
 #   left_join(f2_data) %>% 
 #   mutate(p = ifelse(p < 0.05, "p < 0.05", "p > 0.05"))
   
-ggplot(xd, aes(x=cover_pct, y=mass_gm2)) +
+ggplot(xd, 
+       aes(x=cover_pct, y=mass_gm2)) +
   geom_point() +
   ylab(expression(Aboveground~Biomass~(g~m^-2))) +
   xlab("Percent Cover") +
   geom_smooth(method="lm", se=TRUE, color = "black") +
   facet_wrap(~study, ncol = 1) +
+  theme(strip.text = element_text(size=15))+
   geom_text(aes(0, 200), label = expression(R^2))+
   geom_text(aes(0, 200, label = paste("   = ",adj.r.squared, 
                                      "\n",p,
@@ -82,11 +101,15 @@ ggplot(xd, aes(x=cover_pct, y=mass_gm2)) +
 
 
 # figure 3 ---------------------------------------------------------------------
-#first showing lmm is better
+# first showing lmm is better
 library(nlme)
 
-f3_data <- filter(f2_data, study != "September 2019. n = 40") %>%
-  mutate(study = droplevels(study))
+f3_data <- filter(f2_data, study != "d. September 2019. n = 40") %>%
+  mutate(study = droplevels(study)) %>%
+  mutate(study = str_sub(study, 4, ))%>%
+  mutate(study = factor(study, levels = c("June 2016. n = 59",
+                                          "July 2017. n = 40",
+                                          "July 2018. n = 40")))
 
 mod_f3 <- gls(mass_gm2 ~ 0 + cover_pct, f3_data, method = "ML")
 mod_f3mm <-lme(mass_gm2 ~ 0 + cover_pct, 
@@ -128,7 +151,7 @@ ggplot(f3_data, aes(x=cover_pct, y=mass_gm2, color = study)) +
   xlab("Percent Cover") +
   geom_text(aes(0, 180, label = paste0("y = ", slope, "x + 0")),
             parse=FALSE, hjust="left", color="black")+
-  geom_text(aes(0, 170, label = paste(expression(Pseudo~R^2:~0.81))),
+  geom_text(aes(0, 165, label = paste(expression(Pseudo~R^2:~0.81))),
             parse=TRUE,hjust="left", color="black")+
   theme(plot.title = element_text(size = 12))  +
   scale_color_brewer(palette = "Accent")+
@@ -137,7 +160,7 @@ ggplot(f3_data, aes(x=cover_pct, y=mass_gm2, color = study)) +
         legend.title = element_blank(),
         legend.background = element_rect(fill = 'transparent'))+
   ggsave("figures/figure_3_lmm_line.png",
-         width=4,height=4, limitsize = FALSE)
+         width=3.5,height=3.5, limitsize = FALSE)
 
 
 # figure for 1m2 plots----------------------------------------------------------
