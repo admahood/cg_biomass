@@ -1,4 +1,5 @@
-libs<- c("ggplot2", "ggpubr", "lme4", "lmerTest", "MuMIn", "broom")
+libs<- c("ggplot2", "ggpubr", "lme4", "lmerTest", "MuMIn", "broom", 
+         "performance")
 
 iini <-function(x){
   #stands for install if not installed
@@ -47,7 +48,7 @@ cf2<-ggplot(data.frame(x = c(0, 1)), aes(x)) +
 ggarrange(cf1, cf2, labels="auto", label.x = c(.1, 0.05))+
   ggsave("figures/conceptual_figure.png", width=7, height=3.5)
 
-# figure 2 ---------------------------------------------------------------------
+# figure 3 ---------------------------------------------------------------------
 f2_data <- rbind(js %>% dplyr::select(Plot=plot, cover_pct, mass_gm2)%>%
                    na.omit()%>%
                    mutate(study = "a. June 2016. n = 59",
@@ -138,7 +139,7 @@ ggplot(xd,
             hjust="left", vjust="top")+
   ggsave("figures/figure_2_square.png", height = 8, width=8)
 
-# figure 3 ---------------------------------------------------------------------
+# figure 4 ---------------------------------------------------------------------
 # first showing lmm is better
 library(nlme)
 load("data/peak_green.Rda")
@@ -351,7 +352,7 @@ library(ggtext)
 # partial effects plot for the lm
 
 
-# new fig
+# mixed effects - just cover vs biomass ==================
 pmm<- ggplot(f3_data, aes(x=sqrt(cover_pct),
                           y=sqrt(mass_gm2), color = study)) +
   geom_abline(slope = mm, color="red", lwd=0.75, intercept = ii)+
@@ -367,43 +368,7 @@ pmm<- ggplot(f3_data, aes(x=sqrt(cover_pct),
         legend.background = element_rect(fill = "transparent"),
         panel.border = element_rect(fill=NA, size =.75))
 
-# transformed to regular scale
-ggplot(f3_data, aes(x=(cover_pct), y=(mass_gm2), color = study)) +
-  geom_abline(slope = mm^2, color="red", lwd=0.75, intercept = ii)+
-  geom_point() +
-  geom_line(aes(y=predict(mod_f3m)^2))+
-  ylab(expression(Aboveground~Biomass^{1/2}~(g~m^-2))) +
-  xlab(expression(Percent~Cover^{1/2}))+
-  scale_color_brewer(palette = "Accent")+
-  theme(legend.justification=c(1,0), 
-        legend.position=c(1,0),
-        legend.title = element_blank(),
-        legend.background = element_rect(fill = 'transparent'))+
-  ggsave("figures/figure_3_lmm_line_sqrt_trans.png",
-         width=3.5,height=3.5, limitsize = FALSE)
-  
-ggplot(f3_data, aes(x=cover_pct, y=mass_gm2, color = study)) +
-  geom_point() +
-  geom_line(aes(y=exp(predict(mod_f3mm_l_n0))))#+
-  facet_wrap(~study)
-  # geom_abline(slope = mm, color="red", lwd=0.75)+
-  ylab(expression(Aboveground~Biomass~(g~m^-2))) +
-  xlab("Percent Cover") +
-  geom_text(aes(0, 180, label = paste0("y = ", slope, "x + 0")),
-            parse=FALSE, hjust="left", color="black")+
-  geom_text(aes(0, 165, label = paste(expression(Pseudo~R^2:~0.81))),
-            parse=TRUE,hjust="left", color="black")+
-  theme(plot.title = element_text(size = 12))  +
-  scale_color_brewer(palette = "Accent")+
-  facet_wrap(~study)+
-  theme(legend.justification=c(1,0), 
-        legend.position=c(1,0),
-        legend.title = element_blank(),
-        legend.background = element_rect(fill = 'transparent'))+
-  ggsave("figures/figure_3_lmm_line.png",
-         width=3.5,height=3.5, limitsize = FALSE)
-
-# partial effects plots
+# partial effects plot for the lm ========================================
 closest <- function(x, x0) apply(outer(x, x0, FUN=function(x, x0) abs(x - x0)), 1, which.min)
   
 library(effects)
@@ -452,21 +417,6 @@ p1 <- mod_efff %>%
 ggpubr::ggarrange(p1,pmm, labels = c("(a)", "(b)") ) +
   ggsave("figures/figure_3_2panel.png", height =3.5, width=7.5)
 
-# p2<-mod_effr %>%
-#   ggplot(aes(x=value)) +
-#   geom_line(aes(y=fit), color = "grey") +
-#   geom_point(data = res_dfgr,aes(y=res, color = f3_data$study)) +
-#   geom_line(aes(y=upr), lty=2, color = "grey") +
-#   geom_line(aes(y=lwr), lty=2, color = "grey") +
-#   ylab("Days After") +
-#   xlab("Percent Cover") +
-#   theme_classic()+
-#   theme(legend.title = element_blank(),
-#         axis.title.x = ggtext::element_markdown(),
-#         legend.position = c(0,1),
-#         legend.justification = c(0,1),
-#         legend.background = element_rect(fill = "transparent"),
-#         panel.border = element_rect(fill=NA, size =.75));p2
 
 # figure for 1m2 plots----------------------------------------------------------
 bct <- beautiful_clean_thing %>%
