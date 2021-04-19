@@ -1,0 +1,5 @@
+Name,AIC,RMSE,R2_conditional,R2_marginal,R2
+raw_lm,1632,6.42,NA,NA,0.31
+logged_lm,657,0.9,NA,NA,0.43
+year_random,647,0.84,0.51,0.41,NA
+observers_random,605,0.75,0.59,0.42,NA

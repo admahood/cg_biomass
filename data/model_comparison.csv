@@ -1,0 +1,15 @@
+Formula,AIC,BIC,RMSE,R2_conditional,R2_marginal,R2,ovpR2
+mass_gm2 ~ 0 + cover_pct,1237.5,1243.3,21.119,NA,NA,0.921,0.795
+mass_gm2 ~ cover_pct,1236.1,1244.9,20.866,NA,NA,0.795,0.795
+mass_gm2 ~ 0 + cover_pct + (cover_pct | study),1231.9,1246.5,19.526,0.857,0.807,NA,0.821
+mass_gm2 ~ cover_pct + (cover_pct | study),1233,1250.5,19.503,0.837,0.804,NA,0.821
+log(mass_gm2) ~ 0 + log(cover_pct),423.8,429.7,1.107,NA,NA,0.913,0.638
+log(mass_gm2) ~ 0 + log(cover_pct) + (cover_pct | study),217.8,232.5,0.477,0.932,0.932,NA,0.599
+log(mass_gm2) ~ log(cover_pct) + (cover_pct | study),208.6,226.2,0.474,0.933,0.875,NA,0.619
+log(mass_gm2) ~ log(cover_pct) + (1 | study),207.5,219.2,0.484,0.917,0.907,NA,0.638
+sqrt(mass_gm2) ~ sqrt(cover_pct),457.2,466,1.241,NA,NA,0.875,0.799
+sqrt(mass_gm2) ~ sqrt(cover_pct) + days_after_green,445.6,457.3,1.181,NA,NA,0.886,0.801
+sqrt(mass_gm2) ~ sqrt(cover_pct) + days_after_green + (1 | study),447.6,462.3,1.181,0.887,0.887,NA,0.801
+sqrt(mass_gm2) ~ sqrt(cover_pct) + elevation + (1 | study),455.2,469.8,1.185,0.89,0.881,NA,0.807
+sqrt(mass_gm2) ~ sqrt(cover_pct) + ppt + (1 | study),455.3,469.9,1.185,0.89,0.882,NA,0.807
+sqrt(mass_gm2) ~ sqrt(cover_pct) + (1 | study),453.3,465,1.184,0.89,0.881,NA,0.806
