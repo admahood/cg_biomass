@@ -5,7 +5,7 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4705469.svg)](https://doi.org/10.5281/zenodo.4705469)
 
 
-This is the data and code for our upcoming paper, *"Cover-based allometric estimate of aboveground biomass of a non-native, invasive annual grass (*Bromus tectorum* L.) in the Great Basin, USA"*.
+This is the data and code for our upcoming paper, **"Cover-based allometric estimate of aboveground biomass of a non-native, invasive annual grass (*Bromus tectorum* L.) in the Great Basin, USA"**.
 
 The main scripts are `R/a_data_prep.R` and `R/b_lm_figures.R`.
 
