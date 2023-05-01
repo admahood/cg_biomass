@@ -1,0 +1,266 @@
+// Purpose: get an NDVI time series for a set of points
+// Map.addLayer(pts)
+//
+// Add points to map
+//
+
+Map.addLayer(pts);
+Map.centerObject(pts);
+
+//
+// Create NDVI bands for each satellite product
+//
+
+var ndvi_l5 = l5_sr.map(function(img) {
+  
+  var cloudMask = img.select('pixel_qa').bitwiseAnd(32).eq(0);
+  // Each pixel gets a 1 if it is NOT a cloud shadow, and a 0 if it IS a cloud shadow
+  var cloudShadowMask = img.select('pixel_qa').bitwiseAnd(8).eq(0);
+  // Each pixel gets a 1 if it is NOT water, and a 0 if it IS water
+  var waterMask = img.select('pixel_qa').bitwiseAnd(4).eq(0);
+  // Each pixel gets a 1 if it is NOT snow, and a 0 if it IS snow
+  var snowMask = img.select('pixel_qa').bitwiseAnd(16).eq(0);
+    
+  // For the combined mask (1 is a pixel we want to keep, and a 0 is one we want to mask),
+  // the pixel must both NOT be a cloud AND NOT be a cloud shadow (a 1 for both of the
+  // above masks) in order to be a valid pixel.
+  var mask = cloudMask.and(cloudShadowMask).and(waterMask).and(snowMask);
+    
+  // Return an interpolated image with all cloud and cloud shadow pixels masked.
+  // Use interpolation because CBI on-the-ground plots are unlikely to
+  // lie exactly at the center of a pixel. See Cansler MSc thesis (2011)
+  // and Parks et al. (2014)
+    
+  // Interpolate (resample) for on-the-ground data (cbi plot) validation
+  // Don't interpolate for analyses with only remote-sensed variables
+  
+  var export_img = img.updateMask(mask);
+  
+  return export_img
+  .addBands(export_img
+    .normalizedDifference(['B4', 'B3']).rename('ndvi_landsat5'))
+    .select('ndvi_landsat5');
+})
+.filterBounds(pts);
+
+var ndvi_l8 = l8_sr.map(function(img) {
+  
+  var cloudMask = img.select('pixel_qa').bitwiseAnd(32).eq(0);
+  // Each pixel gets a 1 if it is NOT a cloud shadow, and a 0 if it IS a cloud shadow
+  var cloudShadowMask = img.select('pixel_qa').bitwiseAnd(8).eq(0);
+  // Each pixel gets a 1 if it is NOT water, and a 0 if it IS water
+  var waterMask = img.select('pixel_qa').bitwiseAnd(4).eq(0);
+  // Each pixel gets a 1 if it is NOT snow, and a 0 if it IS snow
+  var snowMask = img.select('pixel_qa').bitwiseAnd(16).eq(0);
+    
+  // For the combined mask (1 is a pixel we want to keep, and a 0 is one we want to mask),
+  // the pixel must both NOT be a cloud AND NOT be a cloud shadow (a 1 for both of the
+  // above masks) in order to be a valid pixel.
+  var mask = cloudMask.and(cloudShadowMask).and(waterMask).and(snowMask);
+    
+  // Return an interpolated image with all cloud and cloud shadow pixels masked.
+  // Use interpolation because CBI on-the-ground plots are unlikely to
+  // lie exactly at the center of a pixel. See Cansler MSc thesis (2011)
+  // and Parks et al. (2014)
+    
+  // Interpolate (resample) for on-the-ground data (cbi plot) validation
+  // Don't interpolate for analyses with only remote-sensed variables
+  
+  var export_img = img.updateMask(mask);
+  
+  return export_img
+  .addBands(export_img
+    .normalizedDifference(['B5', 'B4']).rename('ndvi_landsat8'))
+    .select('ndvi_landsat8');
+})
+.filterBounds(pts);
+
+var ndvi_aqua =  sr_daily_aqua.map(function(img) {
+  return  img
+  .addBands(img.normalizedDifference(['sur_refl_b02', 'sur_refl_b01']).rename('ndvi_aqua'))
+  .select('ndvi_aqua');
+})
+.filterBounds(pts);
+
+var ndvi_terra = sr_daily_terra.map(function(img) {
+  return  img
+  .addBands(img.normalizedDifference(['sur_refl_b02', 'sur_refl_b01']).rename('ndvi_terra'))
+  .select('ndvi_terra');
+})
+.filterBounds(pts);
+
+//
+// Get 16-day NDVI sequence for Landsat
+//
+
+var l5_seq =
+  ndvi_l5
+  // iterate over all images in the Landsat 5 record that overlap
+  // with at least one of the points of interest
+  .map(function(img) {
+  
+    // get the NDVI for all 50 points from each image
+    var fc = img
+    .reduceRegions({
+      collection: pts,
+      reducer: ee.Reducer.first().forEachBand(img),
+      scale: 30
+    });
+  
+    // Iterate through each of the extracted NDVI values to
+    // see whether NDVI could be extracted (which of the points does
+    // each NDVI image overlap with?)
+    fc = fc.map(function(ftr) {
+    
+      var ndvi = 
+        ee.Algorithms.If(
+          ftr.get('ndvi_landsat5'),
+          ftr,
+          null);
+    
+    // return the NDVI value if one was extracted, otherwise return
+    // null
+    return ee.Feature(ndvi);
+  }, true); // use the dropNulls = true argument to drop all cases
+  // when the NDVI couldn't be extracted
+  
+  return fc;
+});
+
+
+//
+// landsat 8
+//
+
+var l8_seq =
+  ndvi_l8
+  // iterate over all images in the Landsat 5 record that overlap
+  // with at least one of the points of interest
+  .map(function(img) {
+  
+    // get the NDVI for all 50 points from each image
+    var fc = img
+    .reduceRegions({
+      collection: pts,
+      reducer: ee.Reducer.first().forEachBand(img),
+      scale: 30
+    });
+  
+    // Iterate through each of the extracted NDVI values to
+    // see whether NDVI could be extracted (which of the points does
+    // each NDVI image overlap with?)
+    fc = fc.map(function(ftr) {
+    
+      var ndvi = 
+        ee.Algorithms.If(
+          ftr.get('ndvi_landsat8'),
+          ftr,
+          null);
+    
+    // return the NDVI value if one was extracted, otherwise return
+    // null
+    return ee.Feature(ndvi);
+  }, true); // use the dropNulls = true argument to drop all cases
+  // when the NDVI couldn't be extracted
+  
+  return fc;
+});
+
+//
+// Get daily Aqua NDVI sequence
+//
+
+var aqua_sequence = ndvi_aqua.map(function(img) {
+
+    // get the NDVI for all 50 points from each image
+    var fc = img
+    .reduceRegions({
+      collection: pts,
+      reducer: ee.Reducer.first().forEachBand(img),
+      scale: 250
+    });
+  
+    // Iterate through each of the extracted NDVI values to
+    // see whether NDVI could be extracted (which of the points does
+    // each NDVI image overlap with?)
+    fc = fc.map(function(ftr) {
+    
+      var ndvi = 
+        ee.Algorithms.If(
+          ftr.get('ndvi_aqua'),
+          ftr,
+          null);
+    
+    // return the NDVI value if one was extracted, otherwise return
+    // null
+    return ee.Feature(ndvi);
+  }, true); // use the dropNulls = true argument to drop all cases
+  // when the NDVI couldn't be extracted
+  
+  return fc;
+});
+
+//
+// Get daily Terra NDVI sequence
+//
+
+var terra_sequence = ndvi_terra.map(function(img) {
+  
+    // get the NDVI for all 50 points from each image
+    var fc = img
+    .reduceRegions({
+      collection: pts,
+      reducer: ee.Reducer.first().forEachBand(img),
+      scale: 250
+    });
+  
+    // Iterate through each of the extracted NDVI values to
+    // see whether NDVI could be extracted (which of the points does
+    // each NDVI image overlap with?)
+    fc = fc.map(function(ftr) {
+    
+      var ndvi = 
+        ee.Algorithms.If(
+          ftr.get('ndvi_terra'),
+          ftr,
+          null);
+    
+    // return the NDVI value if one was extracted, otherwise return
+    // null
+    return ee.Feature(ndvi);
+  }, true); // use the dropNulls = true argument to drop all cases
+  // when the NDVI couldn't be extracted
+  
+  return fc;
+});
+
+
+// Export
+
+Export.table.toDrive({
+  collection: l5_seq.flatten(),
+  description: 'ndvi-sequence_landsat5_cg-plots',
+  folder: 'ee/cg',
+  fileFormat: 'geoJSON'
+});
+
+Export.table.toDrive({
+  collection: l8_seq.flatten(),
+  description: 'ndvi-sequence_landsat8_cg-plots',
+  folder: 'ee/cg',
+  fileFormat: 'geoJSON'
+});
+
+Export.table.toDrive({
+  collection: aqua_sequence.flatten(),
+  description: 'ndvi-sequence_modis_aqua_cg-plots',
+  folder: 'ee/cg',
+  fileFormat: 'geoJSON'
+});
+
+Export.table.toDrive({
+  collection: terra_sequence.flatten(),
+  description: 'ndvi-sequence_modis_terra_cg-plots',
+  folder: 'ee/cg',
+  fileFormat: 'geoJSON'
+});
